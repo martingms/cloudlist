@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+
+{% block extrahead %}
+<link href="/static/styles/player.css" rel="stylesheet" type="text/css" />
+{% endblock extrahead %}
+
+{% block scripts %}
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.6.2/jquery.min.js" type="text/javascript"></script>
+<script src="http://cdnjs.cloudflare.com/ajax/libs/json2/20110223/json2.js" type="text/javascript"></script>
+<script src="http://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.1.6/underscore-min.js" type="text/javascript"></script>
+<script src="http://cdnjs.cloudflare.com/ajax/libs/backbone.js/0.3.3/backbone-min.js" type="text/javascript"></script>
+<!--<script src="/static/js/soundmanager2.js" type="text/javascript"></script>-->
+<script src="http://documentcloud.github.com/backbone/examples/backbone-localstorage.js" type="text/javascript"></script>
+<script src="/static/js/cloudlist.js" type="text/javascript"></script>
+
+{% endblock scripts %}
+
+{% block content %}
+
+<div id="header">
+</div>
+
+<div id="main">
+  <div id="player">
+    <div id="artwork">
+      <span class="img">
+        <img src="http://www.codebasehero.com/files/music-player/demo/mix/1.jpg">
+      </span>
+    </div>
+
+    <div id="trackinfo">
+      <p class="title">Trackname</p>
+      <p class="artist-outer">By <span class="artist">Eminem</span></p>
+    </div>
+
+    <div id="playercontrols">
+      <div id="buttons">
+        <div id="previous">
+        </div>
+        <div id="play">
+        </div>
+        <div id="pause" style="display:none">
+        </div>
+        <div id="next">
+        </div>
+      </div>
+      <div id="progress-wrapper">
+        <div id="progress">
+          <div id="elapsed" style="width: 33.3333%">
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="tracklist">
+    <ol class="tracks">
+      <li class="track"><span class="title">Trackname by Artist</span><span class="duration">13:37</span></li>
+      <li class="track"><span class="title">Trackname by Artist</span><span class="duration">13:37</span></li>
+      <li class="track"><span class="title">Trackname by Artist</span><span class="duration">13:37</span></li>
+      <li class="track"><span class="title">Trackname by Artist</span><span class="duration">13:37</span></li>
+      <li class="track"><span class="title">Trackname by Artist</span><span class="duration">13:37</span></li>
+      <li class="track"><span class="title">Trackname by Artist</span><span class="duration">13:37</span></li>
+      <li class="track"><span class="title">Very long trackname</span><span class="duration">13:37</span></li>
+      <li class="track"><span class="title">Trackname by Artist</span><span class="duration">13:37</span></li>
+      <li class="track"><span class="title">Trackname by Artist</span><span class="duration">13:37</span></li>
+    </ol>
+  </div>
+</div>
+
+<div id="footer">
+</div>
+{% endblock content %}
+

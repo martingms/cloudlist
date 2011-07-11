@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>{% block title %}CloudList{% endblock title %}</title>
+    {% block extrahead %}
+    {% endblock extrahead %}
+  </head>
+  <body>
+    {#
+    {% for category, msg in get_flashed_messages(with_categories=true) %}
+      <p class=flash-{{ category }}>{{ msg }}
+    {% endfor %}
+    #}
+    {% block content %}
+
+    {% endblock content %}
+
+    {# Scripts go here #}
+    {% block scripts %}
+
+    {% endblock scripts %}
+  </body>
+</html>

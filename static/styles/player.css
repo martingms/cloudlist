@@ -1,0 +1,232 @@
+@font-face {
+  font-family: Lato;
+  src: url('../fonts/Lato-Regular.ttf');
+}
+
+@font-face {
+  font-family: Lato Italic;
+  src: url('../fonts/Lato-Italic.ttf');
+}
+
+@font-face {
+  font-family: Lato Bold;
+  src: url('../fonts/Lato-Bold.ttf');
+}
+
+html {
+  overflow-y: scroll;
+}
+
+body {
+  background: #444 url(../img/bg.jpg) repeat 0 0 scroll;
+  font-family: 'Lato', arial, sans-serif;
+  display: block;
+}
+
+#tracklist {
+  padding: 10px 20px;
+  box-shadow: inset 0 1px 1px rgba(0, 0, 0, .15), 0 1px 0 rgba(255, 255, 255, .04);
+  -moz-box-shadow: inset 0 1px 1px rgba(0, 0, 0, .15), 0 1px 0 rgba(255, 255, 255, .04);
+  -webkit-box-shadow: inset 0 1px 1px rgba(0, 0, 0, .15), 0 1px 0 rgba(255, 255, 255, .04);
+  border-radius: 6px;
+  -moz-border-radius: 6px;
+  -webkit-border-radius: 6px;
+  background: transparent url(../img/tracklist-bg.png) repeat 0 0 scroll;
+  color: #999;
+  font-size: 12px;
+  margin-top: 30px;
+}
+
+.tracks {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+.tracks li {
+  -webkit-transition: all 0.5s ease;
+  -moz-transition: all 0.5s ease;
+  -o-transition: all 0.5s ease;
+  transition: all 0.5s ease;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, .6);
+  background: transparent url(../img/tracklist-item-bg.png) repeat-x bottom left scroll;
+  padding: 10px 0 10px 0;
+  list-style-position: inside;
+  position: relative;
+}
+
+.tracks li:hover {
+  color: #eee;
+}
+
+.tracks li:last-child {
+  background: none;
+}
+
+#tracklist .title {
+  width: 250px;
+  display: inline-block;
+  padding: 0 0 0 14px;
+  cursor: pointer;
+  /*
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  */
+}
+
+#main {
+  width: 370px;
+  margin: 60px auto;
+}
+
+#player {
+  width: 100%;
+}
+
+#artwork {
+  position: relative;
+  float: left;
+  display: block;
+  width: 125px;
+  height: 125px;
+  background: #333 url(../img/album-cover-bg.jpg) no-repeat 0 0 scroll;
+  box-shadow: 0px 1px 4px rgba(0, 0, 0, .75);
+  -moz-box-shadow: 0px 1px 4px rgba(0, 0, 0, .75);
+  -webkit-box-shadow: 0px 1px 4px rgba(
+}
+
+#artwork .img {
+  height: 125px;
+  width: 125px;
+  display: block;
+  box-shadow: inset 0 0 1px rgba(255, 255, 255, .6);
+  -moz-box-shadow: inset 0 0 1px rgba(255, 255, 255, .6);
+  -webkit-box-shadow: inset 0 0 1px rgba(255, 255, 255, .6);
+  background-position: center center;
+  background-repeat: no-repeat;
+  background-color: transparent;
+}
+
+#artwork img {
+  height: 125px;
+  width: 125px;
+}
+
+#trackinfo {
+  width: 215px;
+  margin: 8px 0 0 30px;
+  float: left;
+  font-size: 12px;
+}
+
+#trackinfo p {
+  margin: 0 0 8px 0;
+}
+
+#trackinfo .title {
+  color: #EFEFEF;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, .8);
+  font-family: 'Lato Bold', arial, sans-serif;
+  font-weight: bold;
+  font-size: 14px;
+}
+
+#trackinfo .artist-outer {
+  color: #727272;
+  font-family: 'Lato Italic', arial, sans-serif;
+  font-style: italic;
+}
+
+#trackinfo .artist {
+  color: #999;
+  font-family: 'Lato', arial, sans-serif;
+  margin-left: 4px;
+}
+
+#playercontrols {
+  width: 215px;
+  height: 30px;
+  border-radius: 6px;
+  -moz-border-radius: 6px;
+  -webkit-border-radius: 6px;
+  background: transparent url(../img/player-bg.png) repeat 0 0 scroll;
+  float: left;
+  margin: 12px 0 0 30px;
+}
+
+#playercontrols div {
+  float: left;
+  cursor: pointer;
+}
+
+#buttons {
+  width: 52px;
+  height: 12px;
+  margin: 9px 9px;
+  float: left;
+}
+
+#previous {
+  background: transparent url(../img/player-previous.png) no-repeat center center scroll;
+}
+
+#previous, #next {
+  height: 10px;
+  width: 15px;
+  margin: 1px 0;
+}
+
+#play {
+  background: transparent url(../img/player-play.png) no-repeat center center scroll;
+}
+
+#play, #pause {
+  width: 8px;
+  height: 12px;
+  margin: 0 7px;
+}
+
+#pause {
+  background: transparent url(../img/player-pause.png) no-repeat center center scroll;
+}
+
+#next {
+  background: transparent url(../img/player-next.png) no-repeat center center scroll;
+}
+
+#progress-wrapper {
+  height: 9px;
+  width: 135px;
+  float: left;
+  background: transparent url(../img/player-progress.png) repeat-x 0 0 scroll;
+  margin: 11px 10px 10px 0;
+  border-radius: 4px;
+  -moz-border-radius: 4px;
+  -webkit-border-radius: 4px;
+}
+
+#progress {
+  height: 9px;
+  width: 100%;
+}
+
+#elapsed {
+  height: 6px;
+  border-radius: 3px;
+  -moz-border-radius: 3px;
+  -webkit-border-radius: 3px;
+  margin: 1px;
+  width: 60%;
+  background: transparent url(../img/player-elapsed.png) repeat-x 0 0 scroll;
+}
+
+#player::after {
+  clear: both;
+  content: ' ';
+  display: block;
+  font-size: 0;
+  line-height: 0;
+  visibility: hidden;
+  width: 0;
+  height: 0;
+}

@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+  <h3>Tracks</h3>
+  <ul>
+    {% for track in tracks %}
+    <li>
+      {{ track.title }} --> {{ track.link }}
+    </li>
+    {% endfor %}
+  </ul>
+{% endblock %}
