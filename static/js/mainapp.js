@@ -31,6 +31,7 @@ $(function() {
 
   function loadNextSong() {
     var nexttrack = $('.track').first();
+    //FIXME This could be done a lot prettier with $.data()
     var metadata = nexttrack.children('.metadata');
 
     var nextart = metadata.children('.artworkurl').html();
