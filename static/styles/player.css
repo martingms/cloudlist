@@ -68,10 +68,17 @@ body {
   display: inline-block;
   padding: 0 0 0 14px;
   cursor: pointer;
-  /*
-  text-overflow: ellipsis;
   white-space: nowrap;
-  */
+}
+
+#tracklist .duration {
+  float: right;
+}
+
+#tracklist .add {
+  text-shadow: 0 1px 1px rgba(0, 0, 0, .6);
+  text-decoration: none;
+  color: #999 !important;
 }
 
 #main {
@@ -229,4 +236,11 @@ body {
   visibility: hidden;
   width: 0;
   height: 0;
+}
+
+#loader {
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+  margin-top: 250px;
 }
