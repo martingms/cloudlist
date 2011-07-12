@@ -81,7 +81,7 @@ $(function() {
   }
 
   $('#add').click(function() {
-    $('#add-track-input').toggle();
+    $('#add-track-input').fadeToggle();
   });
 
   $('#add-track-input').keypress(function(e) {
