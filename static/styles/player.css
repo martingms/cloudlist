@@ -278,3 +278,7 @@ body {
   background: transparent url(../img/tracklist-bg.png) repeat 0 0 scroll;
   outline: none;
 }
+
+#plnedit, #plnview{
+  padding-left: 11px;
+}
