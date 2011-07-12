@@ -8,3 +8,8 @@
    class to the song in list playing and highlight it somehow.
  * Clean up all code, maybe drop flask for such a simple app? Atleast
    clean up the javascript so it is readable etc.
+
+## Straight up bugs
+
+ * Soundmanager trackids ends up being just 'track\_'.
+ * text in input fields has wrong css.

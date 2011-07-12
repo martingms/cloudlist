@@ -85,6 +85,23 @@ $(function() {
     $('#add-track-input').fadeToggle();
   });
 
+  $('#plnview').click(function() {
+    var $this = $(this);
+    var $input = $('#plneditinput');
+    $input.attr('placeholder', $this.html());
+    $this.hide();
+    $('#plnedit').show();
+  });
+
+  $('#plneditinput').keypress(function(e) {
+    if (e.which != 13) return;
+    //TODO ajax etc..
+    $plnview = $('#plnview');
+    $plnview.html($('#plneditinput').val());
+    $('#plnedit').hide();
+    $plnview.show();
+  });
+
   $('#add-track-input').keypress(function(e) {
     if (e.which != 13) return;
     // add spinner here
