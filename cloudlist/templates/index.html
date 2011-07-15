@@ -12,7 +12,7 @@
 <script src="/static/js/lib/underscore-min.js" type="text/javascript"></script>
 <script src="http://cdnjs.cloudflare.com/ajax/libs/backbone.js/0.5/backbone-min.js" type="text/javascript"></script>
 <script src="/static/js/lib/backbone-relational.js" type="text/javascript"></script>
-<script src="/static/js/soundmanager2.js" type="text/javascript"></script>
+<script src="/static/js/lib/soundmanager2.js" type="text/javascript"></script>
 
 <script src="/static/js/utils.js"></script>
 <script src="/static/js/bbapp.js"></script>
@@ -30,35 +30,7 @@
 
 <div id="main" style="">
   <div id="player">
-    <div id="artwork">
-      <span class="img">
-        <img id="mainart" src="http://www.codebasehero.com/files/music-player/demo/mix/1.jpg">
-      </span>
-    </div>
 
-    <div id="trackinfo">
-      <p class="title">Trackname</p>
-      <p class="artist-outer">Uploaded by <span class="artist">Artist</span></p>
-    </div>
-
-    <div id="playercontrols">
-      <div id="buttons">
-        <div id="previous">
-        </div>
-        <div id="play">
-        </div>
-        <div id="pause" style="display:none">
-        </div>
-        <div id="next">
-        </div>
-      </div>
-      <div id="progress-wrapper">
-        <div id="progress">
-          <div id="elapsed" style="width: 33.3333%">
-          </div>
-        </div>
-      </div>
-    </div>
   </div>
 
   <div id="tracklist">
@@ -79,12 +51,51 @@
 {% raw %}
 <!-- Mustache templates -->
 <div id="templates" style="display: none">
-  </script>
   <script type="text/template" id="track-template">
-      <span class="title">{{shorttitle}}</span><span class="duration">{{duration}}</span>
-      <div class="trackid" style="display: none">{{id}}</div>
+    <span class="title">{{shorttitle}}</span><span class="duration">{{duration}}</span>
+    <div class="trackid" style="display: none">{{id}}</div>
+  </script>
+
+  <script type="text/template" id="player-preload-template">
+    <img class="preloadplay" src="/static/img/bigplay.png">
+  </script>
+
+  <script type="text/template" id="player-template">
+    <div id="artwork">
+      <span class="img">
+        <img id="mainart" src="{{artworkurl}}">
+      </span>
+    </div>
+
+    <div id="trackinfo">
+      <p class="title">{{title}}</p>
+      <p class="artist-outer">Uploaded by 
+        <span class="artist">{{#user}}{{username}}{{/user}}</span>
+      </p>
+    </div>
+
+    <div id="playercontrols">
+      <div id="buttons">
+        <div id="previous">
+        </div>
+        <div id="play">
+        </div>
+        <div id="pause" style="display:none">
+        </div>
+        <div id="next">
+        </div>
+      </div>
+      <div id="progress-wrapper">
+        <div id="progress">
+          <div id="elapsed" style="width: 33.3333%">
+          </div>
+        </div>
+      </div>
+    </div>
+
   </script>
 </div>
+
 {% endraw %}
 {% endblock content %}
 

@@ -37,9 +37,9 @@ $(function() {
       $.getJSON(apiurl, function(scdata) {
         // What scdata contains can be seen here: http://developers.soundcloud.com/docs/api/tracks
         that.set({
+          type        : 'sc',
           title       : scdata.title,
           artworkurl  : scdata.artwork_url,
-          streamurl   : scdata.stream_url,
           downloadurl : scdata.download_url,
           user        : { username: scdata.user.username, userurl: scdata.user.permalink_url },
           duration    : function() {
@@ -49,13 +49,21 @@ $(function() {
             if (seconds <= 10) seconds = seconds + '0';
             return floormin + ':' + seconds;
           }(),
-          shorttitle : function() {
+          shorttitle  : function() {
             if (scdata.title.length > 50) {
               return scdata.title.slice(0,47)+'...';
             } else {
               return scdata.title;
             }
-          }()
+          }(),
+          sound       : soundManager.createSound({
+            id  : 'track_' + that.id,
+            url : function() {
+              var url = scdata.stream_url;
+              url = (url.indexOf('secret_token') == -1) ? url + '?' : url + '&';
+              return url + 'consumer_key=' + settings.consumer_key;
+            }()
+          })
         });
       });
     }
@@ -80,6 +88,8 @@ $(function() {
     url: '/ajax/tracks'
 
   });
+  // FIXME moved here so PlayerView could access it, it doesn't look pretty however...
+  var tracklist = new TrackList();
 
   var PlaylistList = Backbone.Collection.extend({
 
@@ -118,7 +128,68 @@ $(function() {
 
     el: $('#player'),
 
-    events: {},
+    preloadtemplate: $('#player-preload-template').html(),
+    template: $('#player-template').html(),
+
+    events: {
+      'click #play'               : 'playpause',
+      'click #pause'              : 'playpause',
+      'click img.preloadplay'     : 'render',
+      'click #next'               : 'skipToNextTrack',
+      'click #previous'           : 'restartTrack',
+      'dblclick #previous'        : 'skipToPrevTrack'
+    },
+
+    initialize: function() {
+      _.bindAll(this, 'render', 'playpause', 'preLoadRender', 'skipToNextTrack');
+
+      this.nextTrack = this.collection.first();
+
+      this.preLoadRender();
+
+    },
+
+    render: function() {
+      var html = Mustache.to_html(this.template, this.nextTrack.toJSON());
+      this.el.html(html);
+
+      return this;
+    },
+
+    preLoadRender: function() {
+      var html = this.preloadtemplate; // No need for mustache here since we have no variables
+      this.el.html(html);
+    },
+
+    playpause: function() {
+      soundManager.togglePause('track_'+this.nextTrack.id);
+      $('#play, #pause').toggle();
+      //TODO add css so that it lights up when playing...
+      $(this.nextTrack.view.el).toggleClass('playing');
+    },
+
+    skipToNextTrack: function() {
+      $(this.nextTrack.view.el).toggleClass('playing');
+      this.nextTrack = this.collection.at(this.collection.indexOf(this.nextTrack)+1); // FIXME when at max, go to first
+      soundManager.stopAll();
+      soundManager.play('track_'+this.nextTrack.id);
+      $(this.nextTrack.view.el).toggleClass('playing');
+      this.render();
+    },
+
+    skipToPrevTrack: function() {
+      $(this.nextTrack.view.el).toggleClass('playing');
+      this.nextTrack = this.collection.at(this.collection.indexOf(this.nextTrack)-1);
+      soundManager.stopAll();
+      soundManager.play('track_'+this.nextTrack.id);
+      $(this.nextTrack.view.el).toggleClass('playing');
+      this.render();
+    },
+
+    restartTrack: function() {
+      soundManager.stopAll();
+      soundManager.play('track_'+this.nextTrack.id);
+    }
 
   });
 
@@ -135,7 +206,6 @@ $(function() {
       _.bindAll(this, 'render', 'addTrackOnEnter', 'showInput');
 
       this.input = this.$('#add-track-input');
-      var tracklist = new TrackList();
       this.collection = tracklist;
       this.collection.bind('add', this.appendTrack);
 
@@ -145,6 +215,8 @@ $(function() {
           for (var track in tracklist.models) {
             that.appendTrack(tracklist.models[track]);
           }
+          // FIXME should send in tracklist as collection, but async forces it to be global for the time being
+          new PlayerView({ collection: tracklist });
         },
         error: function(model, response) {
           new Error('Something went wrong! This was the response: ' + response);
@@ -178,7 +250,10 @@ $(function() {
 
   });
 
-  var App = new TracklistView();
+  //FIXME Should not have to wait with loading app until soundmanager is ready, fix this
+  soundManager.onready(function() {
+    var Tracklist = new TracklistView();
+  });
 
 });
 
