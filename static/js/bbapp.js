@@ -27,6 +27,9 @@ $(function() {
         case 'soundcloud.com':
           this.getScTrackInfo();
           break;
+        case 'youtube.com':
+          this.getYtTrackInfo();
+          break;
       }
     },
 
@@ -66,6 +69,12 @@ $(function() {
           })
         });
       });
+    },
+
+    getYtTrackInfo: function() {
+      var that = this;
+      var apiurl = '';
+
     }
 
   });
@@ -88,8 +97,6 @@ $(function() {
     url: '/ajax/tracks'
 
   });
-  // FIXME moved here so PlayerView could access it, it doesn't look pretty however...
-  var tracklist = new TrackList();
 
   var PlaylistList = Backbone.Collection.extend({
 
@@ -112,11 +119,11 @@ $(function() {
       _.bindAll(this, 'render');
       this.model.bind('change', this.render);
       this.model.view = this;
-      this.render(); // TODO maybe only render when title found?
+      this.render();
     },
 
     render: function() {
-      var html = Mustache.to_html(this.template, this.model.toJSON());
+      var html = Mustache.to_html(this.template, this.model.toJSON()); // Show a spinner before title is loaded
       $(this.el).html(html);
 
       return this;
@@ -156,11 +163,13 @@ $(function() {
       return this;
     },
 
+    // TODO no need for this, just register to listen for update:title events and rerender as needed :)
     preLoadRender: function() {
       var html = this.preloadtemplate; // No need for mustache here since we have no variables
       this.el.html(html);
     },
 
+    // TODO All playback-functions need to be abstracted one level so as to work for all media sources
     playpause: function() {
       soundManager.togglePause('track_'+this.nextTrack.id);
       $('#play, #pause').toggle();
@@ -206,18 +215,19 @@ $(function() {
       _.bindAll(this, 'render', 'addTrackOnEnter', 'showInput');
 
       this.input = this.$('#add-track-input');
-      this.collection = tracklist;
+      this.collection = new TrackList();
       this.collection.bind('add', this.appendTrack);
 
       var that = this;
-      tracklist.fetch({
+      this.collection.fetch({
         success: function(model, response) {
-          for (var track in tracklist.models) {
-            that.appendTrack(tracklist.models[track]);
+          for (var track in that.collection.models) {
+            that.appendTrack(that.collection.models[track]);
           }
           // FIXME should send in tracklist as collection, but async forces it to be global for the time being
-          new PlayerView({ collection: tracklist });
+          new PlayerView({ collection: that.collection });
         },
+        // TODO Make an ErrorView that shows errors in a meaningful way
         error: function(model, response) {
           new Error('Something went wrong! This was the response: ' + response);
         }
@@ -251,6 +261,7 @@ $(function() {
   });
 
   //FIXME Should not have to wait with loading app until soundmanager is ready, fix this
+  //FIXME Move initialization of app to a router/controller later on.
   soundManager.onready(function() {
     var Tracklist = new TracklistView();
   });
