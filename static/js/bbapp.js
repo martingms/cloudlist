@@ -92,7 +92,10 @@ $(function() {
               var url = scdata.stream_url;
               url = (url.indexOf('secret_token') == -1) ? url + '?' : url + '&';
               return url + 'consumer_key=' + settings.sc_consumer_key;
-            }()
+            }(),
+            onfinish: function() {
+              that.collection.trigger('trackFinished', that);
+            }
           })
         });
       });
@@ -126,6 +129,7 @@ $(function() {
               if (seconds <= 10) seconds = seconds + '0';
               return minutes + ':' + seconds;
             },
+            // TODO shorten title if > 50 chars
             shorttitle : ytdata.entry.title.$t
           });
         }
@@ -135,7 +139,7 @@ $(function() {
     playpause: function() {
       switch (this.get('type')) {
         case 'sc':
-          soundManager.togglePause('track_'+this.id);
+          this.get('sound').togglePause();
           break;
         case 'yt':
           switch (ytplayer.getPlayerState()) {
@@ -157,10 +161,22 @@ $(function() {
       ytplayer.stopVideo();
       switch (this.get('type')) {
         case 'sc':
-          soundManager.play('track_'+this.id);
+          this.get('sound').play();
           break;
         case 'yt':
           ytplayer.loadVideoById(this.get('ytid'));
+          break;
+      }
+    },
+
+    restartTrack: function() {
+      soundManager.stopAll();
+      switch (this.get('type')) {
+        case 'sc':
+          this.get('sound').play();
+          break;
+        case 'yt':
+          ytplayer.seekTo(0);
           break;
       }
     }
@@ -262,6 +278,12 @@ $(function() {
       return this;
     },
 
+    removePlaying: function() {
+      $(this.el).removeClass('playing');
+
+      return this;
+    },
+
     gotoTrack: function() {
       this.model.collection.trigger('gotoTrack', this.model);
     }
@@ -292,14 +314,19 @@ $(function() {
     ytplayer: document.getElementById('ytplayer'),
 
     initialize: function() {
-      _.bindAll(this, 'render', 'playpause', 'skipToNextTrack', 'gotoTrack');
-      this.collection.bind('gotoTrack', this.gotoTrack);
+      _.bindAll(this, 'render', 'playpause', 'skipToNextTrack', 'gotoTrack', 'onTrackFinished');
 
-      // _nextTrack_ should always point to the next track to be played unless there is any skipping etc.
-      // At initialization, this is the first track in the collection.
-      this.nextTrack = this.collection.first();
-      this.nextTrack.playing = false;
-      this.nextTrack.bind('change', this.render);
+      if (this.collection.length > 0) {
+        ytplayer.addEventListener('onStateChange', this.onTrackFinished);
+        ytplayer.addEventListener('onStateChange', function(){console.log('lol');});
+        this.collection.bind('trackFinished', this.onTrackFinished);
+        this.collection.bind('gotoTrack', this.gotoTrack);
+
+        // _nextTrack_ should always point to the next track to be played unless there is any skipping etc.
+        // At initialization, this is the first track in the collection.
+        this.nextTrack = this.collection.first();
+        this.nextTrack.bind('change', this.render);
+      }
     },
 
     render: function() {
@@ -324,7 +351,7 @@ $(function() {
     // + **TODO** Abstract one level so as to work for all media sources.
     skipToNextTrack: function() {
       // Remove class _playing_ from current track.
-      this.nextTrack.view.togglePlaying();
+      this.nextTrack.view.removePlaying();
       // Set _nextTrack_ to be the next track in the collection.
       //
       // + **TODO** If track is the last in collection, skip to the first.
@@ -339,7 +366,8 @@ $(function() {
     //
     // + **TODO** Abstract one level so as to work for all media sources.
     skipToPrevTrack: function() {
-      this.nextTrack.view.togglePlaying();
+      this.nextTrack.view.removePlaying();
+      // Set _nextTrack_ to be the next track in the collection.
       // + **TODO** As with `skipToNextTrack`, if track is the first in the collection, skip to the last.
       this.nextTrack = this.collection.at(this.collection.indexOf(this.nextTrack)-1);
       this.nextTrack.play();
@@ -352,17 +380,31 @@ $(function() {
     //
     // + **TODO** Abstract one level so as to work for all media sources.
     restartTrack: function() {
-      soundManager.stopAll();
-      soundManager.play('track_'+this.nextTrack.id);
+      this.nextTrack.restartTrack();
     },
 
     gotoTrack: function(track) {
-      this.nextTrack.view.togglePlaying();
+      this.nextTrack.view.removePlaying();
       this.nextTrack = track;
       this.nextTrack.play();
       this.nextTrack.view.togglePlaying();
       this.render();
       $('#play, #pause').toggle();
+    },
+
+    onTrackFinished: function(stateortrack) {
+      // If stateortrack isNaN, it is a track model
+      if (isNaN(stateortrack)) {
+        stateortrack.view.removePlaying();
+        // TODO if last track, goto first
+        this.nextTrack = this.collection.at(this.collection.indexOf(stateortrack)+1);
+        this.nextTrack.play();
+        this.nextTrack.view.togglePlaying();
+        this.render();
+        $('#play, #pause').toggle();
+      } else {
+        console.log('yt track finished');
+      }
     }
 
   });
@@ -402,7 +444,7 @@ $(function() {
           }
           // Also, create a new `PlayerView` with the fetched collection as input.
           // That view now handles all playback of the current tracklist.
-          new PlayerView({ collection: that.collection });
+          this.playerview = new PlayerView({ collection: that.collection });
         },
         // If fetch from server was erroneous...
         error: function(model, response) {
@@ -439,6 +481,11 @@ $(function() {
         url: this.input.val()
       });
 
+      // If the newly added track is the first in the collection, initialize the player again.
+      if (this.collection.length == 1 && this.playerview) {
+        this.playerview.initialize();
+      }
+
       // Reset the input value to the empty string and fade out the field upon completion.
       //
       // + **TODO** Only do this if adding of track is successful, if not show a descriptive error message.
@@ -459,6 +506,7 @@ $(function() {
   // + **FIXME** Chaining _onready_s is rather ugly.
   // + **TODO** Start the app through a router instead of a view.
   // + **TODO** Start history once pushState urls is implemented.
+  // + **TODO** Also check if ytplayer is ready through creating `onYouTubePlayerReady()`
   soundManager.onready(function() {
     var Tracklist = new TracklistView();
   });
