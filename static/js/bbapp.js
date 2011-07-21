@@ -130,6 +130,39 @@ $(function() {
           });
         }
       });
+    },
+
+    playpause: function() {
+      switch (this.get('type')) {
+        case 'sc':
+          soundManager.togglePause('track_'+this.id);
+          break;
+        case 'yt':
+          switch (ytplayer.getPlayerState()) {
+            case -1:
+              ytplayer.loadVideoById(this.get('ytid'));
+              break;
+            case 2:
+              ytplayer.playVideo();
+              break;
+            default:
+              ytplayer.pauseVideo();
+          }
+          break;
+      }
+    },
+
+    play: function() {
+      soundManager.stopAll();
+      ytplayer.stopVideo();
+      switch (this.get('type')) {
+        case 'sc':
+          soundManager.play('track_'+this.id);
+          break;
+        case 'yt':
+          ytplayer.loadVideoById(this.get('ytid'));
+          break;
+      }
     }
 
   });
@@ -193,18 +226,20 @@ $(function() {
     tagName: 'li',
 
     // The class name of the encapsulating tag.
-    className: 'tracks',
+    className: 'track',
 
     // The template for the track. This is currently defined in the index jinja2 template.
     //
     // + **TODO** Make all templates separate files, and include them in some other way.
     template: $('#track-template').html(),
 
-    events: {},
+    events: {
+      'dblclick' : 'gotoTrack'
+    },
 
     // When a new instance of TrackView is initialized:
     initialize: function() {
-      _.bindAll(this, 'render');
+      _.bindAll(this, 'render', 'togglePlaying', 'gotoTrack');
       // Bind the _change_ event so that every time a change occurs on the corresponding track, call the render function.
       this.model.bind('change', this.render);
       // Give the track a reference to its view for convenience.
@@ -221,6 +256,16 @@ $(function() {
       return this;
     },
 
+    togglePlaying: function() {
+      $(this.el).toggleClass('playing');
+
+      return this;
+    },
+
+    gotoTrack: function() {
+      this.model.collection.trigger('gotoTrack', this.model);
+    }
+
   });
 
   // PlayerView
@@ -232,31 +277,29 @@ $(function() {
     // The `div` element this view should populate.
     el: $('#player'),
 
-    // The template to use before the first track is loaded.
-    //
-    // + **TODO** This is not really needed. Just listen for change-events on the model and rerender.
-    preloadtemplate: $('#player-preload-template').html(),
-    // The template to use anytime else.
     template: $('#player-template').html(),
 
     events: {
       'click #play'               : 'playpause',
       'click #pause'              : 'playpause',
-      'click img.preloadplay'     : 'render',
       'click #next'               : 'skipToNextTrack',
       'click #previous'           : 'restartTrack',
-      'dblclick #previous'        : 'skipToPrevTrack'
+      'dblclick #previous'        : 'skipToPrevTrack',
     },
 
+    // Fetching the ytplayer element with getElementById because jQuery wraps the element so that
+    // playback functions won't work.
+    ytplayer: document.getElementById('ytplayer'),
+
     initialize: function() {
-      _.bindAll(this, 'render', 'playpause', 'preLoadRender', 'skipToNextTrack');
+      _.bindAll(this, 'render', 'playpause', 'skipToNextTrack', 'gotoTrack');
+      this.collection.bind('gotoTrack', this.gotoTrack);
 
       // _nextTrack_ should always point to the next track to be played unless there is any skipping etc.
       // At initialization, this is the first track in the collection.
       this.nextTrack = this.collection.first();
-
-      this.preLoadRender();
-
+      this.nextTrack.playing = false;
+      this.nextTrack.bind('change', this.render);
     },
 
     render: function() {
@@ -266,22 +309,14 @@ $(function() {
       return this;
     },
 
-    // As noted earlier, there is no real need for this.
-    preLoadRender: function() {
-      // No need to use _mustache.js_ here, because we have no variables.
-      var html = this.preloadtemplate;
-      this.el.html(html);
-    },
-
     // `playpause` - Does what it says on the tin, triggered when play or pause button on player is pressed.
     //
     // + **TODO** Abstract one level so as to work for all media sources.
     //
     playpause: function() {
-      soundManager.togglePause('track_'+this.nextTrack.id);
+      this.nextTrack.playpause();
       $('#play, #pause').toggle();
-      // Adds class _playing_ to the _nextTrack_'s `li` element, so it can be styled.
-      $(this.nextTrack.view.el).toggleClass('playing');
+      this.nextTrack.view.togglePlaying();
     },
 
     // `skipToNextTrack` - Skips ahead to the next track in the list. Called when the next-button is pressed.
@@ -289,28 +324,28 @@ $(function() {
     // + **TODO** Abstract one level so as to work for all media sources.
     skipToNextTrack: function() {
       // Remove class _playing_ from current track.
-      $(this.nextTrack.view.el).toggleClass('playing');
+      this.nextTrack.view.togglePlaying();
       // Set _nextTrack_ to be the next track in the collection.
       //
       // + **TODO** If track is the last in collection, skip to the first.
       this.nextTrack = this.collection.at(this.collection.indexOf(this.nextTrack)+1);
-      soundManager.stopAll();
-      soundManager.play('track_'+this.nextTrack.id);
-      $(this.nextTrack.view.el).toggleClass('playing');
+      this.nextTrack.play();
+      this.nextTrack.view.togglePlaying();
       this.render();
+      $('#play, #pause').toggle();
     },
 
     // `skipToPrevTrack` - Skips back to the previous track in the list. Called when the previous-button is doubleclicked.
     //
     // + **TODO** Abstract one level so as to work for all media sources.
     skipToPrevTrack: function() {
-      $(this.nextTrack.view.el).toggleClass('playing');
+      this.nextTrack.view.togglePlaying();
       // + **TODO** As with `skipToNextTrack`, if track is the first in the collection, skip to the last.
       this.nextTrack = this.collection.at(this.collection.indexOf(this.nextTrack)-1);
-      soundManager.stopAll();
-      soundManager.play('track_'+this.nextTrack.id);
-      $(this.nextTrack.view.el).toggleClass('playing');
+      this.nextTrack.play();
+      this.nextTrack.view.togglePlaying();
       this.render();
+      $('#play, #pause').toggle();
     },
 
     // `restartTrack` - Restarts the current track. Called when the previous-button is pressed once.
@@ -319,6 +354,15 @@ $(function() {
     restartTrack: function() {
       soundManager.stopAll();
       soundManager.play('track_'+this.nextTrack.id);
+    },
+
+    gotoTrack: function(track) {
+      this.nextTrack.view.togglePlaying();
+      this.nextTrack = track;
+      this.nextTrack.play();
+      this.nextTrack.view.togglePlaying();
+      this.render();
+      $('#play, #pause').toggle();
     }
 
   });
