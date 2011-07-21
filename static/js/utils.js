@@ -12,4 +12,14 @@
 String.prototype.getHostname = function() {
   var re = new RegExp('^(?:f|ht)tp(?:s)?\://([^/]+)', 'im');
   return this.match(re)[1].toString();
-}
+};
+
+String.prototype.getYtVideoId = function() {
+  var video_id = this.split('v=')[1];
+  var ampersandPosition = video_id.indexOf('&');
+  if (ampersandPosition != -1) {
+    return video_id.substring(0, ampersandPosition);
+  } else {
+    return video_id;
+  }
+};
