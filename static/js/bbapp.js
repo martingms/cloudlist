@@ -317,8 +317,12 @@ $(function() {
       _.bindAll(this, 'render', 'playpause', 'skipToNextTrack', 'gotoTrack', 'onTrackFinished');
 
       if (this.collection.length > 0) {
-        ytplayer.addEventListener('onStateChange', this.onTrackFinished);
-        ytplayer.addEventListener('onStateChange', function(){console.log('lol');});
+        var that = this;
+        globalEvents.bind('ytPlayerReady', function() {
+          console.log('ytplayerready trigd');
+          console.log(that);
+          that.ytplayer.addEventListener('onStateChange', 'that.onTrackFinished');
+        });
         this.collection.bind('trackFinished', this.onTrackFinished);
         this.collection.bind('gotoTrack', this.gotoTrack);
 
@@ -337,9 +341,6 @@ $(function() {
     },
 
     // `playpause` - Does what it says on the tin, triggered when play or pause button on player is pressed.
-    //
-    // + **TODO** Abstract one level so as to work for all media sources.
-    //
     playpause: function() {
       this.nextTrack.playpause();
       $('#play, #pause').toggle();
@@ -347,8 +348,6 @@ $(function() {
     },
 
     // `skipToNextTrack` - Skips ahead to the next track in the list. Called when the next-button is pressed.
-    //
-    // + **TODO** Abstract one level so as to work for all media sources.
     skipToNextTrack: function() {
       // Remove class _playing_ from current track.
       this.nextTrack.view.removePlaying();
@@ -363,8 +362,6 @@ $(function() {
     },
 
     // `skipToPrevTrack` - Skips back to the previous track in the list. Called when the previous-button is doubleclicked.
-    //
-    // + **TODO** Abstract one level so as to work for all media sources.
     skipToPrevTrack: function() {
       this.nextTrack.view.removePlaying();
       // Set _nextTrack_ to be the next track in the collection.
@@ -377,8 +374,6 @@ $(function() {
     },
 
     // `restartTrack` - Restarts the current track. Called when the previous-button is pressed once.
-    //
-    // + **TODO** Abstract one level so as to work for all media sources.
     restartTrack: function() {
       this.nextTrack.restartTrack();
     },
@@ -393,6 +388,7 @@ $(function() {
     },
 
     onTrackFinished: function(stateortrack) {
+      console.log('ontrackfinished trigd');
       // If stateortrack isNaN, it is a track model
       if (isNaN(stateortrack)) {
         stateortrack.view.removePlaying();
@@ -512,4 +508,13 @@ $(function() {
   });
 
 });
+
+var globalEvents = {};
+
+_.extend(globalEvents, Backbone.Events);
+
+function onYouTubePlayerReady() {
+  console.log('oytpr trigd');
+  globalEvents.trigger('ytPlayerReady');
+}
 
