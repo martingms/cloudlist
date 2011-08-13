@@ -126,7 +126,7 @@ $(function() {
               var totalSeconds = ytdata.entry.media$group.yt$duration.seconds;
               var minutes = Math.floor(totalSeconds / 60);
               var seconds = Math.floor(((totalSeconds / 60)-minutes) * 60);
-              if (seconds <= 10) seconds = seconds + '0';
+              if (seconds <= 10) seconds = '0' + seconds;
               return minutes + ':' + seconds;
             },
             // TODO shorten title if > 50 chars
@@ -311,18 +311,13 @@ $(function() {
 
     // Fetching the ytplayer element with getElementById because jQuery wraps the element so that
     // playback functions won't work.
-    ytplayer: document.getElementById('ytplayer'),
 
     initialize: function() {
-      _.bindAll(this, 'render', 'playpause', 'skipToNextTrack', 'gotoTrack', 'onTrackFinished');
+      _.bindAll(this, 'render', 'playpause', 'skipToNextTrack', 'gotoTrack', 'onYtPlayerStateChange', 'onTrackFinished');
 
       if (this.collection.length > 0) {
         var that = this;
-        globalEvents.bind('ytPlayerReady', function() {
-          console.log('ytplayerready trigd');
-          console.log(that);
-          that.ytplayer.addEventListener('onStateChange', 'that.onTrackFinished');
-        });
+        globalEvents.bind('ytPlayerStateChange', this.onYtPlayerStateChange);
         this.collection.bind('trackFinished', this.onTrackFinished);
         this.collection.bind('gotoTrack', this.gotoTrack);
 
@@ -351,10 +346,11 @@ $(function() {
     skipToNextTrack: function() {
       // Remove class _playing_ from current track.
       this.nextTrack.view.removePlaying();
-      // Set _nextTrack_ to be the next track in the collection.
-      //
-      // + **TODO** If track is the last in collection, skip to the first.
-      this.nextTrack = this.collection.at(this.collection.indexOf(this.nextTrack)+1);
+      if (this.nextTrack == this.collection.last()) {
+        this.nextTrack = this.collection.first();
+      } else {
+        this.nextTrack = this.collection.at(this.collection.indexOf(this.nextTrack)+1);
+      }
       this.nextTrack.play();
       this.nextTrack.view.togglePlaying();
       this.render();
@@ -364,9 +360,11 @@ $(function() {
     // `skipToPrevTrack` - Skips back to the previous track in the list. Called when the previous-button is doubleclicked.
     skipToPrevTrack: function() {
       this.nextTrack.view.removePlaying();
-      // Set _nextTrack_ to be the next track in the collection.
-      // + **TODO** As with `skipToNextTrack`, if track is the first in the collection, skip to the last.
-      this.nextTrack = this.collection.at(this.collection.indexOf(this.nextTrack)-1);
+      if (this.nextTrack == this.collection.first()) {
+        this.nextTrack = this.collection.last();
+      } else {
+        this.nextTrack = this.collection.at(this.collection.indexOf(this.nextTrack)-1);
+      }
       this.nextTrack.play();
       this.nextTrack.view.togglePlaying();
       this.render();
@@ -387,20 +385,27 @@ $(function() {
       $('#play, #pause').toggle();
     },
 
-    onTrackFinished: function(stateortrack) {
-      console.log('ontrackfinished trigd');
-      // If stateortrack isNaN, it is a track model
-      if (isNaN(stateortrack)) {
-        stateortrack.view.removePlaying();
-        // TODO if last track, goto first
-        this.nextTrack = this.collection.at(this.collection.indexOf(stateortrack)+1);
-        this.nextTrack.play();
-        this.nextTrack.view.togglePlaying();
-        this.render();
-        $('#play, #pause').toggle();
-      } else {
-        console.log('yt track finished');
+    onYtPlayerStateChange: function(state) {
+      console.log(state);
+      switch (state) {
+        // Track ended
+        case 0:
+          this.onTrackFinished(this.nextTrack);
       }
+    },
+
+    onTrackFinished: function(track) {
+      track.view.removePlaying();
+      // TODO if last track, goto first
+      if (this.nextTrack == this.collection.last()) {
+        this.nextTrack = this.collection.first();
+      } else {
+        this.nextTrack = this.collection.at(this.collection.indexOf(track)+1);
+      }
+      this.nextTrack.play();
+      this.nextTrack.view.togglePlaying();
+      this.render();
+      $('#play, #pause').toggle();
     }
 
   });
@@ -513,8 +518,11 @@ var globalEvents = {};
 
 _.extend(globalEvents, Backbone.Events);
 
+function ytPlayerStateChange(newState) {
+  globalEvents.trigger('ytPlayerStateChange', newState);
+}
+
 function onYouTubePlayerReady() {
-  console.log('oytpr trigd');
-  globalEvents.trigger('ytPlayerReady');
+  ytplayer.addEventListener('onStateChange', 'ytPlayerStateChange');
 }
 
