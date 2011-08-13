@@ -9,6 +9,9 @@
  * Add a small margin-left to playlistname, to line up with trackname.
  * Actually show a miniature youtube-video in 16:9 when playing from yt
    as source. Click to fullscreen?
+ * Add vimeo support.
+ * Add regular mp3-support.
+ * Consider adding hypem-support?
 
 ## Straight up bugs
 
