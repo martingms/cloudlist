@@ -313,7 +313,7 @@ $(function() {
     // playback functions won't work.
 
     initialize: function() {
-      _.bindAll(this, 'render', 'playpause', 'skipToNextTrack', 'gotoTrack', 'onYtPlayerStateChange', 'onTrackFinished');
+      _.bindAll(this, 'render', 'playpause', 'skipToNextTrack', 'gotoTrack', 'onYtPlayerStateChange', 'onTrackFinished', 'startProgressBar');
 
       if (this.collection.length > 0) {
         var that = this;
@@ -339,6 +339,7 @@ $(function() {
     playpause: function() {
       this.nextTrack.playpause();
       $('#play, #pause').toggle();
+      this.startProgressBar();
       this.nextTrack.view.togglePlaying();
     },
 
@@ -346,11 +347,14 @@ $(function() {
     skipToNextTrack: function() {
       // Remove class _playing_ from current track.
       this.nextTrack.view.removePlaying();
+      clearInterval(this.nextTrack.interval);
+      this.nextTrack.interval = null;
       if (this.nextTrack == this.collection.last()) {
         this.nextTrack = this.collection.first();
       } else {
         this.nextTrack = this.collection.at(this.collection.indexOf(this.nextTrack)+1);
       }
+      this.startProgressBar();
       this.nextTrack.play();
       this.nextTrack.view.togglePlaying();
       this.render();
@@ -360,11 +364,14 @@ $(function() {
     // `skipToPrevTrack` - Skips back to the previous track in the list. Called when the previous-button is doubleclicked.
     skipToPrevTrack: function() {
       this.nextTrack.view.removePlaying();
+      clearInterval(this.nextTrack.interval);
+      this.nextTrack.interval = null;
       if (this.nextTrack == this.collection.first()) {
         this.nextTrack = this.collection.last();
       } else {
         this.nextTrack = this.collection.at(this.collection.indexOf(this.nextTrack)-1);
       }
+      this.startProgressBar();
       this.nextTrack.play();
       this.nextTrack.view.togglePlaying();
       this.render();
@@ -372,13 +379,17 @@ $(function() {
     },
 
     // `restartTrack` - Restarts the current track. Called when the previous-button is pressed once.
+    // TODO should not be needed, go straight to nextTrack.restartTrack()
     restartTrack: function() {
       this.nextTrack.restartTrack();
     },
 
     gotoTrack: function(track) {
       this.nextTrack.view.removePlaying();
+      clearInterval(this.nextTrack.interval);
+      this.nextTrack.interval = null;
       this.nextTrack = track;
+      this.startProgressBar();
       this.nextTrack.play();
       this.nextTrack.view.togglePlaying();
       this.render();
@@ -386,7 +397,6 @@ $(function() {
     },
 
     onYtPlayerStateChange: function(state) {
-      console.log(state);
       switch (state) {
         // Track ended
         case 0:
@@ -396,16 +406,44 @@ $(function() {
 
     onTrackFinished: function(track) {
       track.view.removePlaying();
+      clearInterval(this.nextTrack.interval);
+      this.nextTrack.interval = null;
       // TODO if last track, goto first
       if (this.nextTrack == this.collection.last()) {
         this.nextTrack = this.collection.first();
       } else {
         this.nextTrack = this.collection.at(this.collection.indexOf(track)+1);
       }
+      this.startProgressBar();
       this.nextTrack.play();
       this.nextTrack.view.togglePlaying();
       this.render();
       $('#play, #pause').toggle();
+    },
+
+    startProgressBar: function() {
+      var that = this;
+      switch (this.nextTrack.get('type')) {
+        case 'sc':
+          var sound = this.nextTrack.get('sound');
+          var duration, progress;
+          this.nextTrack.interval = setInterval(function() {
+            // If song fully loaded, get real duration, if not, get an estimate.
+            duration = sound.duration || sound.durationEstimate;
+            progress = sound.position / duration;
+            $('#elapsed').css('width', 100 * progress + '%');
+          }, 500);
+        case 'yt':
+          var duration, progress;
+          var timecounter = 0;
+          this.nextTrack.interval = setInterval(function() {
+            timecounter += 0.5;
+            duration = ytplayer.getDuration();
+            progress = timecounter / duration;
+            $('#elapsed').css('width', 100 * progress + '%');
+          }, 500);
+      }
+
     }
 
   });

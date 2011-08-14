@@ -12,9 +12,14 @@
  * Add vimeo support.
  * Add regular mp3-support.
  * Consider adding hypem-support?
+ * Abstract all source-specific stuff, so adding new sources is easier.
 
-## Straight up bugs
+## Bugs
 
  * Soundmanager trackids ends up being just 'track\_'.
  * text in input fields has wrong css.
  * URL-input doesnt close after successful add.
+
+## Long term
+
+ * Chrome-extension for queuing like Spotify or for adding to playlist.
