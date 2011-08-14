@@ -338,6 +338,8 @@ $(function() {
     // `playpause` - Does what it says on the tin, triggered when play or pause button on player is pressed.
     playpause: function() {
       this.nextTrack.playpause();
+      clearInterval(this.nextTrack.interval);
+      this.nextTrack.interval = null;
       $('#play, #pause').toggle();
       this.startProgressBar();
       this.nextTrack.view.togglePlaying();
@@ -432,6 +434,9 @@ $(function() {
             duration = sound.duration || sound.durationEstimate;
             progress = sound.position / duration;
             $('#elapsed').css('width', 100 * progress + '%');
+            console.log('Duration: '+duration);
+            console.log('Progress (%): '+100*progress);
+            console.log('Position: '+sound.position);
           }, 500);
         case 'yt':
           var duration, progress;

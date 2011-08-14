@@ -19,6 +19,8 @@
  * Soundmanager trackids ends up being just 'track\_'.
  * text in input fields has wrong css.
  * URL-input doesnt close after successful add.
+ * playpause fucks up progress in yt-tracks.
+ * Progress wrong somehow on sc-tracks.
 
 ## Long term
 
