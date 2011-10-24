@@ -59,6 +59,10 @@ body {
   color: #eee;
 }
 
+.playing {
+  color: #eee;
+}
+
 .tracks li:last-child {
   background: none;
 }
@@ -281,4 +285,18 @@ body {
 
 #plnedit, #plnview{
   padding-left: 11px;
+}
+
+#player .preloadplay {
+  height: 125px;
+  width: 126px;
+  margin-top: 20px;
+  margin-left: 122px;
+  margin-right: 122px;
+}
+
+#ytplayer {
+  position: fixed;
+  top: -500px;
+  left: -500px;
 }
