@@ -11,15 +11,15 @@ var Track = Backbone.Model.extend({
     //
     //     'http://soundcloud.com/artist/track'.getHostname();
     //       returns: 'soundcloud.com'
-    //var host = this.get('url').getHostname();
+    var host = this.get('url').getHostname();
 
-    this.trackhandler = newTrackHandler(this);
+    this.handler = newTrackHandler(this.get('url'));
 
     // Chooses which function to use for fetching track info based on link hostname.
     switch (host) {
-      case 'soundcloud.com':
-        this.getScTrackInfo();
-        break;
+      //case 'soundcloud.com':
+      //  this.getScTrackInfo();
+      //  break;
       case 'youtube.com', 'www.youtube.com':
         this.set({ ytid: this.get('url').getYtVideoId() });
         this.getYtTrackInfo();
@@ -28,55 +28,55 @@ var Track = Backbone.Model.extend({
   },
 
   // `getScTrackInfo` - Called by Track.initialize if new track url hostname is _souncloud.com_.
-  getScTrackInfo: function() {
-    // Here, _this_ refers to the model in question. This reference is saved to the variable _that_ to avoid losing the reference deeper in the function.
-    var that = this;
-    var apiurl = 'http://api.soundcloud.com/resolve?url='+this.get('url')+'&format=json&consumer_key='+settings.sc_consumer_key+'&callback=?';
-
-    $.getJSON(apiurl, function(scdata) {
-      // What _scdata_ contains can be seen [here](http://developers.soundcloud.com/docs/api/tracks).
-      that.set({
-        // _type_ is set so the player can determine how to play the track.
-        type        : 'sc',
-        title       : scdata.title,
-        artworkurl  : scdata.artwork_url,
-        downloadurl : scdata.download_url,
-        user        : { username: scdata.user.username, userurl: scdata.user.permalink_url },
-        // Duration is returned in milliseconds, for now this is changed on the fly to the more common _mm:ss_ format.
-        //
-        // + **TODO** Make it return _hh:mm:ss_ if the duration is greater than one hour.
-        // + **TODO** Also have a redundant duration in milliseconds, if it is needed by the progress bar.
-        // + **TODO** Move duration function to utils.js, taking ms or s or m or whatever as second argument.
-        duration    : function() {
-          var minutes = scdata.duration / 1000 / 60;
-          var floormin = Math.floor(minutes);
-          var seconds = Math.floor((minutes - floormin) * 60);
-          if (seconds <= 10) seconds = seconds + '0';
-          return floormin + ':' + seconds;
-        }(),
-        // If title has greater than 50 characters, make a short version that is truncated at 47 and ends with ellipsis to signify that it is truncated.
-        shorttitle  : function() {
-          if (scdata.title.length > 50) {
-            return scdata.title.slice(0,47)+'...';
-          } else {
-            return scdata.title;
-          }
-        }(),
-        // Creates a soundmanager2 sound for the track, so it can be easily played on demand.
-        sound       : soundManager.createSound({
-          id  : 'track_' + that.id,
-          url : function() {
-            var url = scdata.stream_url;
-            url = (url.indexOf('secret_token') == -1) ? url + '?' : url + '&';
-            return url + 'consumer_key=' + settings.sc_consumer_key;
-          }(),
-          onfinish: function() {
-            that.collection.trigger('trackFinished', that);
-          }
-        })
-      });
-    });
-  },
+//  getScTrackInfo: function() {
+//    // Here, _this_ refers to the model in question. This reference is saved to the variable _that_ to avoid losing the reference deeper in the function.
+//    var that = this;
+//    var apiurl = 'http://api.soundcloud.com/resolve?url='+this.get('url')+'&format=json&consumer_key='+settings.sc_consumer_key+'&callback=?';
+//
+//    $.getJSON(apiurl, function(scdata) {
+//      // What _scdata_ contains can be seen [here](http://developers.soundcloud.com/docs/api/tracks).
+//      that.set({
+//        // _type_ is set so the player can determine how to play the track.
+//        type        : 'sc',
+//        title       : scdata.title,
+//        artworkurl  : scdata.artwork_url,
+//        downloadurl : scdata.download_url,
+//        user        : { username: scdata.user.username, userurl: scdata.user.permalink_url },
+//        // Duration is returned in milliseconds, for now this is changed on the fly to the more common _mm:ss_ format.
+//        //
+//        // + **TODO** Make it return _hh:mm:ss_ if the duration is greater than one hour.
+//        // + **TODO** Also have a redundant duration in milliseconds, if it is needed by the progress bar.
+//        // + **TODO** Move duration function to utils.js, taking ms or s or m or whatever as second argument.
+//        duration    : function() {
+//          var minutes = scdata.duration / 1000 / 60;
+//          var floormin = Math.floor(minutes);
+//          var seconds = Math.floor((minutes - floormin) * 60);
+//          if (seconds <= 10) seconds = seconds + '0';
+//          return floormin + ':' + seconds;
+//        }(),
+//        // If title has greater than 50 characters, make a short version that is truncated at 47 and ends with ellipsis to signify that it is truncated.
+//        shorttitle  : function() {
+//          if (scdata.title.length > 50) {
+//            return scdata.title.slice(0,47)+'...';
+//          } else {
+//            return scdata.title;
+//          }
+//        }(),
+//        // Creates a soundmanager2 sound for the track, so it can be easily played on demand.
+//        sound       : soundManager.createSound({
+//          id  : 'track_' + that.id,
+//          url : function() {
+//            var url = scdata.stream_url;
+//            url = (url.indexOf('secret_token') == -1) ? url + '?' : url + '&';
+//            return url + 'consumer_key=' + settings.sc_consumer_key;
+//          }(),
+//          onfinish: function() {
+//            that.collection.trigger('trackFinished', that);
+//          }
+//        })
+//      });
+//    });
+//  },
 
   // `getYtTrackInfo` - Called by Track.initialize if new track url hostname is _youtube.com_.
   //
@@ -116,7 +116,7 @@ var Track = Backbone.Model.extend({
   playpause: function() {
     switch (this.get('type')) {
       case 'sc':
-        this.get('sound').togglePause();
+        this.handler.playpause();
         break;
       case 'yt':
         switch (ytplayer.getPlayerState()) {
@@ -134,11 +134,12 @@ var Track = Backbone.Model.extend({
   },
 
   play: function() {
+    // FIXME These two should be abstracted to a stopall function
     soundManager.stopAll();
     ytplayer.stopVideo();
     switch (this.get('type')) {
       case 'sc':
-        this.get('sound').play();
+        this.handler.play();
         break;
       case 'yt':
         ytplayer.loadVideoById(this.get('ytid'));
@@ -147,10 +148,9 @@ var Track = Backbone.Model.extend({
   },
 
   restartTrack: function() {
-    soundManager.stopAll();
     switch (this.get('type')) {
       case 'sc':
-        this.get('sound').play();
+        this.handler.play();
         break;
       case 'yt':
         ytplayer.seekTo(0);

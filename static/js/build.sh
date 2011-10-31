@@ -4,6 +4,9 @@
 
 cat \
   app/intro.js \
+  app/trackhandlers/mainhandler.js \
+  app/trackhandlers/SoundcloudTrackHandler.js \
+  app/trackhandlers/YouTubeTrackHandler.js \
   app/models/Track.js \
   app/models/Playlist.js \
   app/collections/PlaylistList.js \

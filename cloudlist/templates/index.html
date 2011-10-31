@@ -60,7 +60,7 @@
 <!-- Mustache templates -->
 <div id="templates" style="display: none">
   <script type="text/template" id="track-template">
-    <span class="title">{{shorttitle}}</span><span class="duration">{{duration}}</span>
+    <span class="title">{{handler.shorttitle}}</span><span class="duration">{{duration}}</span>
     <div class="trackid" style="display: none">{{id}}</div>
   </script>
 
@@ -71,14 +71,14 @@
   <script type="text/template" id="player-template">
     <div id="artwork">
       <span class="img">
-        <img id="mainart" src="{{artworkurl}}">
+        <img id="mainart" src="{{handler.artworkurl}}">
       </span>
     </div>
 
     <div id="trackinfo">
-      <p class="title">{{title}}</p>
+      <p class="title">{{handler.title}}</p>
       <p class="artist-outer">Uploaded by 
-        <span class="artist">{{#user}}{{username}}{{/user}}</span>
+        <span class="artist">{{#handler.user}}{{handler.username}}{{/handler.user}}</span>
       </p>
     </div>
 
