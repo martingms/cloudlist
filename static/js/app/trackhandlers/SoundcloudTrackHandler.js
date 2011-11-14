@@ -1,10 +1,11 @@
 // soundcloudTrackHandler.js
 
-function SoundcloudTrackHandler(url) {
+function SoundcloudTrackHandler(url, model) {
   var that = this;
   var apiurl = 'http://api.soundcloud.com/resolve?url='+url+'&format=json&consumer_key='+settings.sc_consumer_key+'&callback=?';
 
   $.getJSON(apiurl, function(data) {
+
     that.type = 'sc';
     that.title = data.title;
     that.artworkurl = data.artwork_url;
@@ -38,6 +39,8 @@ function SoundcloudTrackHandler(url) {
         that.collection.trigger('trackFinished', that);
       }
     })
+    // Because of the async call, the change event is triggered manually.
+    model.change(that);
   });
 
   that.playpause = function() {

@@ -30,7 +30,9 @@ var TrackView = Backbone.View.extend({
 
   render: function() {
     // Using [mustache.js](https://github.com/janl/mustache.js) for templating. This forces logic out of the templates pretty well.
-    var html = Mustache.to_html(this.template, this.model.toJSON()); // Show a spinner before title is loaded
+    var html = Mustache.to_html(this.template, _.clone(this.model.nonpersistant)); // Show a spinner before title is loaded
+
+    console.log(this.model);
     $(this.el).html(html);
 
     // Returning _this_ (the model instance) to make chaining possible.

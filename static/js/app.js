@@ -6,17 +6,17 @@
 $(function() {
 // mainhandler.js
 
-function newTrackHandler(url) {
+function newTrackHandler(url, model) {
   var host = url.getHostname();
 
   // Chooses which function to use for fetching track info based on link hostname.
   switch (host) {
     case 'soundcloud.com':
-      return new SoundcloudTrackHandler(url);
+      return new SoundcloudTrackHandler(url, model);
       break;
     case 'youtube.com', 'www.youtube.com':
       //this.set({ ytid: this.get('url').getYtVideoId() });
-      return new YouTubeTrackHandler(url);
+      return new YouTubeTrackHandler(url, model);
       break;
     default:
       console.log("This source (" + url + ") is not yet supported.");
@@ -24,11 +24,12 @@ function newTrackHandler(url) {
 };
 // soundcloudTrackHandler.js
 
-function SoundcloudTrackHandler(url) {
+function SoundcloudTrackHandler(url, model) {
   var that = this;
   var apiurl = 'http://api.soundcloud.com/resolve?url='+url+'&format=json&consumer_key='+settings.sc_consumer_key+'&callback=?';
 
   $.getJSON(apiurl, function(data) {
+
     that.type = 'sc';
     that.title = data.title;
     that.artworkurl = data.artwork_url;
@@ -62,6 +63,8 @@ function SoundcloudTrackHandler(url) {
         that.collection.trigger('trackFinished', that);
       }
     })
+    // Because of the async call, the change event is triggered manually.
+    model.change(that);
   });
 
   that.playpause = function() {
@@ -82,8 +85,57 @@ function SoundcloudTrackHandler(url) {
 };
 // YouTubeTrackHandler.js
 
-function YouTubeTrackHandler(url) {
-  this.url = url;
+function YouTubeTrackHandler(url, model) {
+  var that = this;
+  that.ytid = model.get('url').getYtVideoId();
+  var apiurl = 'https://gdata.youtube.com/feeds/api/videos/'+that.ytid+'?alt=json';
+
+  $.ajax({
+    url        : apiurl,
+    dataType   : 'jsonp',
+    beforeSend : function(jqXHR) {
+      jqXHR.setRequestHeader('GData-Version', 2);
+      jqXHR.setRequestHeader('X-GData-Key', 'key='+settings.yt_developer_key);
+    },
+    success    : function(ytdata) {
+      // What _ytdata_ contains can be tried out with youtube's interactive [demo](http://gdata.youtube.com/demo/index.html).
+      that.type = 'yt';
+      that.title = ytdata.entry.title.$t;
+      that.artworkurl = ytdata.entry.media$group.media$thumbnail[0].url;
+      that.user = { username: ytdata.entry.author[0].name.$t, userurl: ytdata.entry.author[0].uri.$t };
+      that.duration = function() {
+        var totalSeconds = ytdata.entry.media$group.yt$duration.seconds;
+        var minutes = Math.floor(totalSeconds / 60);
+        var seconds = Math.floor(((totalSeconds / 60)-minutes) * 60);
+        if (seconds <= 10) seconds = '0' + seconds;
+        return minutes + ':' + seconds;
+      }();
+      // TODO shorten title if > 50 chars
+      that.shorttitle = ytdata.entry.title.$t;
+      model.change(that);
+    }
+  });
+
+  that.playpause = function() {
+    switch (ytplayer.getPlayerState()) {
+      case -1:
+        ytplayer.loadVideoById(model.get('ytid'));
+        break;
+      case 2:
+        ytplayer.playVideo();
+        break;
+      default:
+        ytplayer.pauseVideo();
+    }
+  };
+
+  that.play = function() {
+    ytplayer.loadVideoById(that.ytid);
+  };
+
+  that.restartTrack = function() {
+    ytplayer.seekTo(0);
+  };
 }
 // Track.js
 
@@ -100,149 +152,28 @@ var Track = Backbone.Model.extend({
     //       returns: 'soundcloud.com'
     var host = this.get('url').getHostname();
 
-    this.handler = newTrackHandler(this.get('url'));
+    // An object that holds all attributes that should not be backed up to the
+    // database.
+    this.nonpersistant = {};
 
-    // Chooses which function to use for fetching track info based on link hostname.
-    switch (host) {
-      //case 'soundcloud.com':
-      //  this.getScTrackInfo();
-      //  break;
-      case 'youtube.com', 'www.youtube.com':
-        this.set({ ytid: this.get('url').getYtVideoId() });
-        this.getYtTrackInfo();
-        break;
-    }
-  },
+    this.nonpersistant.handler = newTrackHandler(this.get('url'), this);
+    //this.set({ handler: newTrackHandler(this.get('url'), this) });
 
-  // `getScTrackInfo` - Called by Track.initialize if new track url hostname is _souncloud.com_.
-//  getScTrackInfo: function() {
-//    // Here, _this_ refers to the model in question. This reference is saved to the variable _that_ to avoid losing the reference deeper in the function.
-//    var that = this;
-//    var apiurl = 'http://api.soundcloud.com/resolve?url='+this.get('url')+'&format=json&consumer_key='+settings.sc_consumer_key+'&callback=?';
-//
-//    $.getJSON(apiurl, function(scdata) {
-//      // What _scdata_ contains can be seen [here](http://developers.soundcloud.com/docs/api/tracks).
-//      that.set({
-//        // _type_ is set so the player can determine how to play the track.
-//        type        : 'sc',
-//        title       : scdata.title,
-//        artworkurl  : scdata.artwork_url,
-//        downloadurl : scdata.download_url,
-//        user        : { username: scdata.user.username, userurl: scdata.user.permalink_url },
-//        // Duration is returned in milliseconds, for now this is changed on the fly to the more common _mm:ss_ format.
-//        //
-//        // + **TODO** Make it return _hh:mm:ss_ if the duration is greater than one hour.
-//        // + **TODO** Also have a redundant duration in milliseconds, if it is needed by the progress bar.
-//        // + **TODO** Move duration function to utils.js, taking ms or s or m or whatever as second argument.
-//        duration    : function() {
-//          var minutes = scdata.duration / 1000 / 60;
-//          var floormin = Math.floor(minutes);
-//          var seconds = Math.floor((minutes - floormin) * 60);
-//          if (seconds <= 10) seconds = seconds + '0';
-//          return floormin + ':' + seconds;
-//        }(),
-//        // If title has greater than 50 characters, make a short version that is truncated at 47 and ends with ellipsis to signify that it is truncated.
-//        shorttitle  : function() {
-//          if (scdata.title.length > 50) {
-//            return scdata.title.slice(0,47)+'...';
-//          } else {
-//            return scdata.title;
-//          }
-//        }(),
-//        // Creates a soundmanager2 sound for the track, so it can be easily played on demand.
-//        sound       : soundManager.createSound({
-//          id  : 'track_' + that.id,
-//          url : function() {
-//            var url = scdata.stream_url;
-//            url = (url.indexOf('secret_token') == -1) ? url + '?' : url + '&';
-//            return url + 'consumer_key=' + settings.sc_consumer_key;
-//          }(),
-//          onfinish: function() {
-//            that.collection.trigger('trackFinished', that);
-//          }
-//        })
-//      });
-//    });
-//  },
-
-  // `getYtTrackInfo` - Called by Track.initialize if new track url hostname is _youtube.com_.
-  //
-  // + **TODO** Write the function.
-  getYtTrackInfo: function() {
-    var that = this;
-    var apiurl = 'https://gdata.youtube.com/feeds/api/videos/'+this.get('ytid')+'?alt=json';
-
-    $.ajax({
-      url        : apiurl,
-      dataType   : 'jsonp',
-      beforeSend : function(jqXHR) {
-        jqXHR.setRequestHeader('GData-Version', 2);
-        jqXHR.setRequestHeader('X-GData-Key', 'key='+settings.yt_developer_key);
-      },
-      success    : function(ytdata) {
-        // What _ytdata_ contains can be tried out with youtube's interactive [demo](http://gdata.youtube.com/demo/index.html).
-        that.set({
-          type       : 'yt',
-          title      : ytdata.entry.title.$t,
-          artworkurl : ytdata.entry.media$group.media$thumbnail[0].url,
-          user       : { username: ytdata.entry.author[0].name.$t, userurl: ytdata.entry.author[0].uri.$t },
-          duration   : function() {
-            var totalSeconds = ytdata.entry.media$group.yt$duration.seconds;
-            var minutes = Math.floor(totalSeconds / 60);
-            var seconds = Math.floor(((totalSeconds / 60)-minutes) * 60);
-            if (seconds <= 10) seconds = '0' + seconds;
-            return minutes + ':' + seconds;
-          },
-          // TODO shorten title if > 50 chars
-          shorttitle : ytdata.entry.title.$t
-        });
-      }
-    });
   },
 
   playpause: function() {
-    switch (this.get('type')) {
-      case 'sc':
-        this.handler.playpause();
-        break;
-      case 'yt':
-        switch (ytplayer.getPlayerState()) {
-          case -1:
-            ytplayer.loadVideoById(this.get('ytid'));
-            break;
-          case 2:
-            ytplayer.playVideo();
-            break;
-          default:
-            ytplayer.pauseVideo();
-        }
-        break;
-    }
+    this.nonpersistant.handler.playpause();
   },
 
   play: function() {
     // FIXME These two should be abstracted to a stopall function
     soundManager.stopAll();
     ytplayer.stopVideo();
-    switch (this.get('type')) {
-      case 'sc':
-        this.handler.play();
-        break;
-      case 'yt':
-        ytplayer.loadVideoById(this.get('ytid'));
-        break;
-    }
+    this.nonpersistant.handler.play();
   },
 
   restartTrack: function() {
-    switch (this.get('type')) {
-      case 'sc':
-        this.handler.play();
-        break;
-      case 'yt':
-        ytplayer.seekTo(0);
-        break;
-    }
+    this.nonpersistant.handler.play();
   }
 
 });
@@ -319,7 +250,9 @@ var TrackView = Backbone.View.extend({
 
   render: function() {
     // Using [mustache.js](https://github.com/janl/mustache.js) for templating. This forces logic out of the templates pretty well.
-    var html = Mustache.to_html(this.template, this.model.toJSON()); // Show a spinner before title is loaded
+    var html = Mustache.to_html(this.template, _.clone(this.model.nonpersistant)); // Show a spinner before title is loaded
+
+    console.log(this.model);
     $(this.el).html(html);
 
     // Returning _this_ (the model instance) to make chaining possible.
@@ -381,7 +314,7 @@ var PlayerView = Backbone.View.extend({
   },
 
   render: function() {
-    var html = Mustache.to_html(this.template, this.nextTrack.toJSON());
+    var html = Mustache.to_html(this.template, _.clone(this.nextTrack.nonpersistant));
     this.el.html(html);
 
     return this;

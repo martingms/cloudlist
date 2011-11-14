@@ -36,7 +36,7 @@ var PlayerView = Backbone.View.extend({
   },
 
   render: function() {
-    var html = Mustache.to_html(this.template, this.nextTrack.toJSON());
+    var html = Mustache.to_html(this.template, _.clone(this.nextTrack.nonpersistant));
     this.el.html(html);
 
     return this;
