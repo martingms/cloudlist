@@ -31,6 +31,15 @@ function YouTubeTrackHandler(url, model) {
     }
   });
 
+  // .getCurrentTime returns elapsed time of video in seconds
+  //var _duration = ytplayer.getDuration();
+  that.progress = function() {
+    if (ytplayerready)
+      return ytplayer.getCurrentTime() / ytplayer.getDuration();
+    else
+      return 0;
+  };
+
   that.playpause = function() {
     switch (ytplayer.getPlayerState()) {
       case -1:

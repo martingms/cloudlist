@@ -38,10 +38,16 @@ function SoundcloudTrackHandler(url, model) {
       onfinish: function() {
         that.collection.trigger('trackFinished', that);
       }
-    })
+    });
+
+    that.progress = function() { return (that.sound.position || 0) / (that.sound.duration || that.sound.durationEstimate) };
+
     // Because of the async call, the change event is triggered manually.
     model.change(that);
   });
+
+  // FIXME _duration should be called something else.
+  //var _duration = that.sound.duration || sound.durationEstimate;
 
   that.playpause = function() {
     // FIXME sound should be private somehow, same as above.

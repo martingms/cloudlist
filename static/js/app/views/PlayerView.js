@@ -20,7 +20,7 @@ var PlayerView = Backbone.View.extend({
   // playback functions won't work.
 
   initialize: function() {
-    _.bindAll(this, 'render', 'playpause', 'skipToNextTrack', 'gotoTrack', 'onYtPlayerStateChange', 'onTrackFinished', 'startProgressBar');
+    _.bindAll(this, 'render', 'playpause', 'skipToNextTrack', 'gotoTrack', 'onYtPlayerStateChange', 'onTrackFinished');
 
     if (this.collection.length > 0) {
       var that = this;
@@ -39,16 +39,20 @@ var PlayerView = Backbone.View.extend({
     var html = Mustache.to_html(this.template, _.clone(this.nextTrack.nonpersistant));
     this.el.html(html);
 
+    that = this;
+
+    // Every half second, checks for progress on nextTrack
+    setInterval(function() {
+      $('#elapsed').css('width', 100 * that.nextTrack.nonpersistant.handler.progress() + '%');
+    }, 500);
+
     return this;
   },
 
   // `playpause` - Does what it says on the tin, triggered when play or pause button on player is pressed.
   playpause: function() {
     this.nextTrack.playpause();
-    clearInterval(this.nextTrack.interval);
-    this.nextTrack.interval = null;
     $('#play, #pause').toggle();
-    this.startProgressBar();
     this.nextTrack.view.togglePlaying();
   },
 
@@ -56,14 +60,11 @@ var PlayerView = Backbone.View.extend({
   skipToNextTrack: function() {
     // Remove class _playing_ from current track.
     this.nextTrack.view.removePlaying();
-    clearInterval(this.nextTrack.interval);
-    this.nextTrack.interval = null;
     if (this.nextTrack == this.collection.last()) {
       this.nextTrack = this.collection.first();
     } else {
       this.nextTrack = this.collection.at(this.collection.indexOf(this.nextTrack)+1);
     }
-    this.startProgressBar();
     this.nextTrack.play();
     this.nextTrack.view.togglePlaying();
     this.render();
@@ -73,14 +74,11 @@ var PlayerView = Backbone.View.extend({
   // `skipToPrevTrack` - Skips back to the previous track in the list. Called when the previous-button is doubleclicked.
   skipToPrevTrack: function() {
     this.nextTrack.view.removePlaying();
-    clearInterval(this.nextTrack.interval);
-    this.nextTrack.interval = null;
     if (this.nextTrack == this.collection.first()) {
       this.nextTrack = this.collection.last();
     } else {
       this.nextTrack = this.collection.at(this.collection.indexOf(this.nextTrack)-1);
     }
-    this.startProgressBar();
     this.nextTrack.play();
     this.nextTrack.view.togglePlaying();
     this.render();
@@ -95,10 +93,7 @@ var PlayerView = Backbone.View.extend({
 
   gotoTrack: function(track) {
     this.nextTrack.view.removePlaying();
-    clearInterval(this.nextTrack.interval);
-    this.nextTrack.interval = null;
     this.nextTrack = track;
-    this.startProgressBar();
     this.nextTrack.play();
     this.nextTrack.view.togglePlaying();
     this.render();
@@ -115,47 +110,16 @@ var PlayerView = Backbone.View.extend({
 
   onTrackFinished: function(track) {
     track.view.removePlaying();
-    clearInterval(this.nextTrack.interval);
-    this.nextTrack.interval = null;
     // TODO if last track, goto first
     if (this.nextTrack == this.collection.last()) {
       this.nextTrack = this.collection.first();
     } else {
       this.nextTrack = this.collection.at(this.collection.indexOf(track)+1);
     }
-    this.startProgressBar();
     this.nextTrack.play();
     this.nextTrack.view.togglePlaying();
     this.render();
     $('#play, #pause').toggle();
-  },
-
-  startProgressBar: function() {
-    var that = this;
-    switch (this.nextTrack.get('type')) {
-      case 'sc':
-        var sound = this.nextTrack.get('sound');
-        var duration, progress;
-        this.nextTrack.interval = setInterval(function() {
-          // If song fully loaded, get real duration, if not, get an estimate.
-          duration = sound.duration || sound.durationEstimate;
-          progress = sound.position / duration;
-          $('#elapsed').css('width', 100 * progress + '%');
-          console.log('Duration: '+duration);
-          console.log('Progress (%): '+100*progress);
-          console.log('Position: '+sound.position);
-        }, 500);
-      case 'yt':
-        var duration, progress;
-        var timecounter = 0;
-        this.nextTrack.interval = setInterval(function() {
-          timecounter += 0.5;
-          duration = ytplayer.getDuration();
-          progress = timecounter / duration;
-          $('#elapsed').css('width', 100 * progress + '%');
-        }, 500);
-    }
-
   }
 
 });

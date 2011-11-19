@@ -16,6 +16,7 @@
 });
 
 // Ugly hack for sending messages between views etc. FIXME
+// All soundManager and youtube etc. loading should happen in their respective plugins tbh.
 var globalEvents = {};
 
 _.extend(globalEvents, Backbone.Events);
@@ -24,7 +25,12 @@ function ytPlayerStateChange(newState) {
   globalEvents.trigger('ytPlayerStateChange', newState);
 }
 
+//Ugliest hack ever for having a way to check if ytplayer is ready. FIXME
+window.ytplayerready = false;
 // Fucking youtube
 function onYouTubePlayerReady() {
   ytplayer.addEventListener('onStateChange', 'ytPlayerStateChange');
+
+  //Ugliest hack ever for having a way to check if ytplayer is ready. FIXME
+  window.ytplayerready = true;
 }
